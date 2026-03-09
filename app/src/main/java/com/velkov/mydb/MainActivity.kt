@@ -3,6 +3,7 @@ package com.velkov.mydb
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -17,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.velkov.mydb.NewsModel
 import com.velkov.mydb.NewsViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,7 +29,93 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NewsScreen()
+                    AppNavigation()
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppNavigation() {
+    var selectedItem by remember { mutableStateOf<MenuItem>(MenuItem.News) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(280.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Меню",
+                        fontSize = 20.sp,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                    NavigationDrawerItem(
+                        label = { Text(MenuItem.News.title) },
+                        selected = selectedItem == MenuItem.News,
+                        onClick = {
+                            selectedItem = MenuItem.News
+                            scope.launch { drawerState.close() }
+                        },
+                        icon = {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(id = MenuItem.News.icon),
+                                contentDescription = null
+                            )
+                        }
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    NavigationDrawerItem(
+                        label = { Text(MenuItem.Task2.title) },
+                        selected = selectedItem == MenuItem.Task2,
+                        onClick = {
+                            selectedItem = MenuItem.Task2
+                            scope.launch { drawerState.close() }
+                        },
+                        icon = {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(id = MenuItem.Task2.icon),
+                                contentDescription = null
+                            )
+                        }
+                    )
+                }
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(selectedItem.title) },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_sort_alphabetically),
+                                contentDescription = "Меню"
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                when (selectedItem) {
+                    is MenuItem.News -> NewsScreen()
+                    is MenuItem.Task2 -> Task2Screen()
                 }
             }
         }
@@ -170,6 +258,35 @@ fun NewsQuarter(news: NewsModel, onLikeClick: () -> Unit) {
                     Text("+", fontSize = 14.sp)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun Task2Screen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Второе задание",
+                fontSize = 24.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "",
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "⚡ В разработке ⚡",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
         }
     }
 }
