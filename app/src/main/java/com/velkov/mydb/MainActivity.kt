@@ -128,7 +128,7 @@ fun NewsScreen(viewModel: NewsViewModel = viewModel()) {
 
     LaunchedEffect(Unit) {
         while(true) {
-            delay(5000L)
+            delay(5005L)
             viewModel.updateRandomNews()
         }
     }
