@@ -36,7 +36,7 @@ class OpenGLView(context: Context) : GLSurfaceView(context) {
         setEGLContextClientVersion(2)
         renderer = OpenGLRenderer(context)
         setRenderer(renderer)
-        renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+        renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
     }
 }
 
@@ -48,54 +48,59 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private val mvpMatrix = FloatArray(16)
 
     private var backgroundSquare: BackgroundSquare? = null
-    private var cube: Cube? = null
-
-    private val cubeRotation = 30f
+    private var solarSystem: SolarSystem? = null
+    //private var cube: Cube? = null
+    private var startTime: Long = 0
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
+        GLES20.glEnable(GLES20.GL_BLEND)  // для прозрачности орбит
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         backgroundSquare = BackgroundSquare(context)
-        cube = Cube()
+
+        //cube = Cube()
+
+        solarSystem = SolarSystem(context)
+        startTime = System.currentTimeMillis()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-
         GLES20.glViewport(0, 0, width, height)
 
         val ratio = width.toFloat() / height.toFloat()
+        Matrix.perspectiveM(projectionMatrix, 0, 45f, ratio, 1f, 100f)
 
-        Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, 3f, 20f)
-
-        Matrix.setLookAtM(viewMatrix, 0,0f, 0f, 8f,0f, 0f, 0f, 0f, 1f, 0f)
-
+        Matrix.setLookAtM(viewMatrix, 0,0f, 15f, 25f,0f, 0f, 0f,0f, 1f, 0f)
     }
 
     override fun onDrawFrame(gl: GL10?) {
-
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
         Matrix.setIdentityM(modelMatrix, 0)
-        Matrix.translateM(modelMatrix, 0, 0f, 0f, -5f)
-        Matrix.scaleM(modelMatrix, 0, 5f, 5f, 1f)
+        Matrix.translateM(modelMatrix, 0, 0f, -20f, -20f)
+        Matrix.scaleM(modelMatrix, 0, 25f, 25f, 1f)
 
         Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0)
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
 
         backgroundSquare?.draw(mvpMatrix)
 
-        Matrix.setIdentityM(modelMatrix, 0)
+        /*Matrix.setIdentityM(modelMatrix, 0)
         Matrix.scaleM(modelMatrix, 0, 0.5f, 0.5f, 0.5f)
         Matrix.rotateM(modelMatrix, 0, cubeRotation, 1f, 1f, 0f)
 
         Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0)
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
 
-        cube?.draw(mvpMatrix)
+        cube?.draw(mvpMatrix)*/
 
+        solarSystem?.update()
+        solarSystem?.draw(viewMatrix, projectionMatrix)
+
+        (gl as? GLSurfaceView)?.requestRender()
     }
-
     companion object {
         fun loadShader(type: Int, shaderCode: String): Int {
             val shader = GLES20.glCreateShader(type)
@@ -105,6 +110,7 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
     }
 }
+
 
 class BackgroundSquare(context: Context) {
 
