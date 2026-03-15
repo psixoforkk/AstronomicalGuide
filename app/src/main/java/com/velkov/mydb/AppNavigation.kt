@@ -53,15 +53,15 @@ fun AppNavigation() {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     NavigationDrawerItem(
-                        label = { Text(MenuItem.Task2.title) },
-                        selected = selectedItem == MenuItem.Task2,
+                        label = { Text(MenuItem.OpenGL.title) },
+                        selected = selectedItem == MenuItem.OpenGL,
                         onClick = {
-                            selectedItem = MenuItem.Task2
+                            selectedItem = MenuItem.OpenGL
                             scope.launch { drawerState.close() }
                         },
                         icon = {
                             Icon(
-                                painter = androidx.compose.ui.res.painterResource(id = MenuItem.Task2.icon),
+                                painter = androidx.compose.ui.res.painterResource(id = MenuItem.OpenGL.icon),
                                 contentDescription = null
                             )
                         }
@@ -88,7 +88,7 @@ fun AppNavigation() {
             Box(modifier = Modifier.padding(paddingValues)) {
                 when (selectedItem) {
                     is MenuItem.News -> NewsScreen()
-                    is MenuItem.Task2 -> Task2Screen()
+                    is MenuItem.OpenGL -> OpenGLScreen()
                 }
             }
         }

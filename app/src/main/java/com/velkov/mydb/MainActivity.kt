@@ -35,32 +35,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-@Composable
-fun Task2Screen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Второе задание",
-                fontSize = 24.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "",
-                fontSize = 16.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "В разработке",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-        }
-    }
-}
