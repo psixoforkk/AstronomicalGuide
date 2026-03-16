@@ -46,4 +46,10 @@ class SolarSystem(private val context: Context) {
             planet.draw(viewMatrix, projectionMatrix)
         }
     }
+
+    fun getPlanetAngle(index: Int): Float {
+        return if (index in planets.indices) {
+            planets[index].getOrbitAngle()
+        } else 0f
+    }
 }

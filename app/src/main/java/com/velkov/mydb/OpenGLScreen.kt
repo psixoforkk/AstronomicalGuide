@@ -11,6 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -21,12 +27,51 @@ import javax.microedition.khronos.opengles.GL10
 fun OpenGLScreen() {
     val context = LocalContext.current
 
-    AndroidView(
-        factory = { ctx ->
-            OpenGLView(ctx)
-        },
-        modifier = androidx.compose.ui.Modifier.fillMaxSize()
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { ctx ->
+                OpenGLView(ctx)
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth() .padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = {  },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Влево")
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Button(
+                    onClick = { },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Инфо")
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Button(
+                    onClick = {  },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Вправо")
+                }
+            }
+        }
+    }
+
 }
 
 class OpenGLView(context: Context) : GLSurfaceView(context) {
@@ -51,11 +96,14 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var solarSystem: SolarSystem? = null
     //private var cube: Cube? = null
     private var startTime: Long = 0
+    private var selectionCube: Cube? = null
+
+    private var selectedPlanetIndex = 0
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
-        GLES20.glEnable(GLES20.GL_BLEND)  // для прозрачности орбит
+        GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         backgroundSquare = BackgroundSquare(context)
@@ -64,6 +112,9 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
         solarSystem = SolarSystem(context)
         startTime = System.currentTimeMillis()
+
+        selectionCube = Cube()
+
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -99,7 +150,27 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
         solarSystem?.update()
         solarSystem?.draw(viewMatrix, projectionMatrix)
 
+        drawSelectionCube()
+
         (gl as? GLSurfaceView)?.requestRender()
+    }
+
+    private fun drawSelectionCube() {
+
+        val mercuryPos = floatArrayOf(
+            4f * cos(solarSystem?.getPlanetAngle(0) ?: 0f),
+            0f,
+            4f * sin(solarSystem?.getPlanetAngle(0) ?: 0f)
+        )
+
+        Matrix.setIdentityM(modelMatrix, 0)
+        Matrix.translateM(modelMatrix, 0, mercuryPos[0], mercuryPos[1], mercuryPos[2])
+        Matrix.scaleM(modelMatrix, 0, 0.5f, 0.5f, 0.5f)
+
+        Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+        Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
+
+        selectionCube?.draw(mvpMatrix)
     }
     companion object {
         fun loadShader(type: Int, shaderCode: String): Int {
@@ -109,6 +180,9 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
             return shader
         }
     }
+
+    private fun cos(angle: Float): Float = kotlin.math.cos(angle.toDouble()).toFloat()
+    private fun sin(angle: Float): Float = kotlin.math.sin(angle.toDouble()).toFloat()
 }
 
 
@@ -339,7 +413,7 @@ class Cube {
 
         GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0)
 
-        GLES20.glUniform4f(colorHandle, 0.2f, 0.5f, 0.8f, 0.8f)
+        GLES20.glUniform4f(colorHandle, 0.3f, 0.6f, 1.0f, 0.3f)
 
         GLES20.glEnableVertexAttribArray(positionHandle)
         GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer)
@@ -348,4 +422,5 @@ class Cube {
 
         GLES20.glDisableVertexAttribArray(positionHandle)
     }
+
 }

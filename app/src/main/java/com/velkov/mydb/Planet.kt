@@ -154,4 +154,5 @@ class Planet(
 
     private fun cos(angle: Float): Float = kotlin.math.cos(angle.toDouble()).toFloat()
     private fun sin(angle: Float): Float = kotlin.math.sin(angle.toDouble()).toFloat()
+    fun getOrbitAngle(): Float = orbitAngle
 }
