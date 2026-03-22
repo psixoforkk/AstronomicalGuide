@@ -14,7 +14,9 @@ class Planet(
     val speed: Float,
     val context: Context,
     val textureResId: Int,
-    val hasMoon: Boolean = false
+    val hasMoon: Boolean = false,
+    val isMoon: Boolean = false
+
 ) {
     private val texturedSphere: TexturedSphere
     private var moon: Planet? = null
@@ -31,33 +33,25 @@ class Planet(
     init {
         texturedSphere = TexturedSphere(context, radius, 30, 30, textureResId)
 
-        if (hasMoon) {
-            moon = Planet(
-                name = "Луна",
-                radius = radius * 0.3f,
-                distanceFromSun = distanceFromSun * 0.15f,
-                speed = speed * 3f,
-                context = context,
-                textureResId = R.drawable.moon_texture,
-                hasMoon = false
-            )
-        }
-
-        val orbitVertices = FloatArray(orbitPoints * 3)
-        for (i in 0 until orbitPoints) {
-            val angle = 2.0 * Math.PI * i / orbitPoints
-            orbitVertices[i * 3] = (distanceFromSun * Math.cos(angle)).toFloat()
-            orbitVertices[i * 3 + 1] = 0f
-            orbitVertices[i * 3 + 2] = (distanceFromSun * Math.sin(angle)).toFloat()
-        }
-
-        orbitVertexBuffer = ByteBuffer.allocateDirect(orbitVertices.size * 4)
-            .order(ByteOrder.nativeOrder())
-            .asFloatBuffer()
-            .apply {
-                put(orbitVertices)
-                position(0)
+        if (!isMoon) {
+            val orbitVertices = FloatArray(orbitPoints * 3)
+            for (i in 0 until orbitPoints) {
+                val angle = 2.0 * Math.PI * i / orbitPoints
+                orbitVertices[i * 3] = (distanceFromSun * Math.cos(angle)).toFloat()
+                orbitVertices[i * 3 + 1] = 0f
+                orbitVertices[i * 3 + 2] = (distanceFromSun * Math.sin(angle)).toFloat()
             }
+
+            orbitVertexBuffer = ByteBuffer.allocateDirect(orbitVertices.size * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+                .apply {
+                    put(orbitVertices)
+                    position(0)
+                }
+        } else {
+            orbitVertexBuffer = ByteBuffer.allocateDirect(0).asFloatBuffer()
+        }
     }
 
     fun update(deltaTime: Float) {
@@ -72,7 +66,10 @@ class Planet(
     }
 
     fun draw(viewMatrix: FloatArray, projectionMatrix: FloatArray) {
-        drawOrbit(viewMatrix, projectionMatrix)
+
+        if (!isMoon) {
+            drawOrbit(viewMatrix, projectionMatrix)
+        }
 
         val x = distanceFromSun * cos(orbitAngle)
         val z = distanceFromSun * sin(orbitAngle)
@@ -99,6 +96,24 @@ class Planet(
             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
 
             it.texturedSphere.draw(mvpMatrix)
+        }
+    }
+
+    fun drawAsMoon(viewMatrix: FloatArray, projectionMatrix: FloatArray, parentEarth: Planet?) {
+        parentEarth?.let { earth ->
+            val earthX = earth.distanceFromSun * cos(earth.orbitAngle)
+            val earthZ = earth.distanceFromSun * sin(earth.orbitAngle)
+
+            val moonX = earthX + 1.2f * cos(orbitAngle)
+            val moonZ = earthZ + 1.2f * sin(orbitAngle)
+
+            Matrix.setIdentityM(modelMatrix, 0)
+            Matrix.translateM(modelMatrix, 0, moonX, 0f, moonZ)
+
+            Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+            Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
+
+            texturedSphere.draw(mvpMatrix)
         }
     }
 
@@ -155,4 +170,11 @@ class Planet(
     private fun cos(angle: Float): Float = kotlin.math.cos(angle.toDouble()).toFloat()
     private fun sin(angle: Float): Float = kotlin.math.sin(angle.toDouble()).toFloat()
     fun getOrbitAngle(): Float = orbitAngle
+
+    fun getPosition(): FloatArray {
+        val x = distanceFromSun * cos(orbitAngle)
+        val z = distanceFromSun * sin(orbitAngle)
+        return floatArrayOf(x, 0f, z)
+    }
+
 }

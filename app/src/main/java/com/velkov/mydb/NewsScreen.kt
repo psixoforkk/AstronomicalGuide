@@ -19,63 +19,30 @@ fun NewsScreen(viewModel: NewsViewModel = viewModel()) {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(0.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(1.dp)
-                ) {
+        modifier = Modifier.fillMaxSize().padding(0.dp)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(1.dp)) {
                     NewsQuarter(
                         news = news[0],
                         onLikeClick = { viewModel.likeNews(0) }
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(1.dp)
-                ) {
+                Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(1.dp)) {
                     NewsQuarter(
                         news = news[1],
                         onLikeClick = { viewModel.likeNews(1) }
                     )
                 }
             }
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(1.dp)
-                ) {
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(1.dp)) {
                     NewsQuarter(
                         news = news[2],
                         onLikeClick = { viewModel.likeNews(2) }
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(1.dp)
-                ) {
+                Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(1.dp)) {
                     NewsQuarter(
                         news = news[3],
                         onLikeClick = { viewModel.likeNews(3) }

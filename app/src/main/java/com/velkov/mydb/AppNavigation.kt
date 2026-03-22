@@ -19,22 +19,9 @@ fun AppNavigation() {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(280.dp)
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Меню",
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
+            Box(modifier = Modifier.fillMaxHeight().width(280.dp).background(MaterialTheme.colorScheme.surface)) {
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text(text = "Меню", fontSize = 20.sp, modifier = Modifier.padding(vertical = 16.dp))
                     NavigationDrawerItem(
                         label = { Text(MenuItem.News.title) },
                         selected = selectedItem == MenuItem.News,
@@ -49,9 +36,7 @@ fun AppNavigation() {
                             )
                         }
                     )
-
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
                     NavigationDrawerItem(
                         label = { Text(MenuItem.OpenGL.title) },
                         selected = selectedItem == MenuItem.OpenGL,

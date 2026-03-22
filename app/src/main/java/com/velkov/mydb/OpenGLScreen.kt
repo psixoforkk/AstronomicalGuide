@@ -14,6 +14,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -27,10 +32,12 @@ import javax.microedition.khronos.opengles.GL10
 fun OpenGLScreen() {
     val context = LocalContext.current
 
+    var openGLView by remember { mutableStateOf<OpenGLView?>(null) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { ctx ->
-                OpenGLView(ctx)
+                OpenGLView(ctx).also { view -> openGLView = view }
             },
             modifier = Modifier.fillMaxSize()
         )
@@ -45,7 +52,7 @@ fun OpenGLScreen() {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Button(
-                    onClick = {  },
+                    onClick = { openGLView?.previousPlanet() },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Влево")
@@ -63,7 +70,7 @@ fun OpenGLScreen() {
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Button(
-                    onClick = {  },
+                    onClick = { openGLView?.nextPlanet() },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Вправо")
@@ -74,14 +81,35 @@ fun OpenGLScreen() {
 
 }
 
+interface OnPlanetChangeListener {
+    fun onPlanetChanged(index: Int, name: String)
+}
+
 class OpenGLView(context: Context) : GLSurfaceView(context) {
     private val renderer: OpenGLRenderer
+
+    private var planetChangeListener: OnPlanetChangeListener? = null
 
     init {
         setEGLContextClientVersion(2)
         renderer = OpenGLRenderer(context)
         setRenderer(renderer)
         renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
+    }
+
+    fun setOnPlanetChangeListener(listener: OnPlanetChangeListener) {
+        planetChangeListener = listener
+        renderer.setOnPlanetChangeListener(listener)
+    }
+
+    fun nextPlanet() {
+        renderer.nextPlanet()
+        requestRender()
+    }
+
+    fun previousPlanet() {
+        renderer.previousPlanet()
+        requestRender()
     }
 }
 
@@ -99,6 +127,34 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var selectionCube: Cube? = null
 
     private var selectedPlanetIndex = 0
+    private var planetChangeListener: OnPlanetChangeListener? = null
+
+    private val planetNames = listOf(
+        "Меркурий", "Венера", "Земля", "Марс",
+        "Юпитер", "Сатурн", "Уран", "Нептун", "Луна"
+    )
+
+    fun setOnPlanetChangeListener(listener: OnPlanetChangeListener) {
+        planetChangeListener = listener
+    }
+
+    fun nextPlanet() {
+        selectedPlanetIndex = (selectedPlanetIndex + 1) % planetNames.size
+        planetChangeListener?.onPlanetChanged(selectedPlanetIndex, planetNames[selectedPlanetIndex])
+    }
+
+    fun previousPlanet() {
+        selectedPlanetIndex = if (selectedPlanetIndex - 1 < 0) {
+            planetNames.size - 1
+        } else {
+            selectedPlanetIndex - 1
+        }
+        planetChangeListener?.onPlanetChanged(selectedPlanetIndex, planetNames[selectedPlanetIndex])
+    }
+
+    private fun getPlanetPosition(index: Int): FloatArray {
+        return solarSystem?.getPlanetPosition(index) ?: floatArrayOf(0f, 0f, 0f)
+    }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
@@ -157,15 +213,14 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     private fun drawSelectionCube() {
 
-        val mercuryPos = floatArrayOf(
-            4f * cos(solarSystem?.getPlanetAngle(0) ?: 0f),
-            0f,
-            4f * sin(solarSystem?.getPlanetAngle(0) ?: 0f)
-        )
+        val planetPos = getPlanetPosition(selectedPlanetIndex)
 
         Matrix.setIdentityM(modelMatrix, 0)
-        Matrix.translateM(modelMatrix, 0, mercuryPos[0], mercuryPos[1], mercuryPos[2])
-        Matrix.scaleM(modelMatrix, 0, 0.5f, 0.5f, 0.5f)
+        Matrix.translateM(modelMatrix, 0, planetPos[0], planetPos[1], planetPos[2])
+
+        val planetRadius = solarSystem?.getPlanetRadius(selectedPlanetIndex) ?: 0.4f
+        val cubeScale = planetRadius * 1.2f
+        Matrix.scaleM(modelMatrix, 0, cubeScale, cubeScale, cubeScale)
 
         Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0)
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
