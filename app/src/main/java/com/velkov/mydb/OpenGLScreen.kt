@@ -33,11 +33,20 @@ fun OpenGLScreen() {
     val context = LocalContext.current
 
     var openGLView by remember { mutableStateOf<OpenGLView?>(null) }
+    var showMoonDialog by remember { mutableStateOf(false) }
+    var currentPlanetName by remember { mutableStateOf("") }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { ctx ->
-                OpenGLView(ctx).also { view -> openGLView = view }
+                OpenGLView(ctx).also { view ->
+                    openGLView = view
+                    view.setOnPlanetChangeListener(object : OnPlanetChangeListener {
+                        override fun onPlanetChanged(index: Int, name: String) {
+                            currentPlanetName = name
+                        }
+                    })
+                }
             },
             modifier = Modifier.fillMaxSize()
         )
@@ -61,7 +70,20 @@ fun OpenGLScreen() {
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Button(
-                    onClick = { },
+                    onClick = {
+                        openGLView?.let { view ->
+                            currentPlanetName = view.getCurrentPlanetName()
+                            if (currentPlanetName == "Луна") {
+                                showMoonDialog = true
+                            } else {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Информация о $currentPlanetName",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Инфо")
@@ -77,6 +99,11 @@ fun OpenGLScreen() {
                 }
             }
         }
+    }
+    if (showMoonDialog) {
+        MoonDialog(
+            onDismiss = { showMoonDialog = false }
+        )
     }
 
 }
@@ -100,6 +127,10 @@ class OpenGLView(context: Context) : GLSurfaceView(context) {
     fun setOnPlanetChangeListener(listener: OnPlanetChangeListener) {
         planetChangeListener = listener
         renderer.setOnPlanetChangeListener(listener)
+    }
+
+    fun getCurrentPlanetName(): String {
+        return renderer.getCurrentPlanetName()
     }
 
     fun nextPlanet() {
@@ -133,6 +164,10 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
         "Меркурий", "Венера", "Земля", "Марс",
         "Юпитер", "Сатурн", "Уран", "Нептун", "Луна"
     )
+
+    fun getCurrentPlanetName(): String {
+        return planetNames[selectedPlanetIndex]
+    }
 
     fun setOnPlanetChangeListener(listener: OnPlanetChangeListener) {
         planetChangeListener = listener
