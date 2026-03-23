@@ -36,6 +36,22 @@ fun OpenGLScreen() {
     var showMoonDialog by remember { mutableStateOf(false) }
     var currentPlanetName by remember { mutableStateOf("") }
 
+    var showPlanetDialog by remember { mutableStateOf(false) }
+    var currentPlanetTexture by remember { mutableStateOf(R.drawable.earth_texture) }
+    var currentPlanetRadius by remember { mutableStateOf(0.37f) }
+    var currentPlanetInfo by remember { mutableStateOf("") }
+
+    val planetData = mapOf(
+        "Меркурий" to Triple(R.drawable.mercury_texture, 0.3f, "Меркурий | Радиус: 2 440 км | Расстояние от Солнца: 57.9 млн км | Самая быстрая планета"),
+        "Венера" to Triple(R.drawable.venus_texture, 0.35f, "Венера | Радиус: 6 052 км | Расстояние: 108.2 млн км | Самая горячая планета"),
+        "Земля" to Triple(R.drawable.earth_texture, 0.37f, "Земля | Радиус: 6 371 км | Расстояние: 149.6 млн км | Наш дом"),
+        "Марс" to Triple(R.drawable.mars_texture, 0.32f, "Марс | Радиус: 3 390 км | Расстояние: 227.9 млн км | Красная планета"),
+        "Юпитер" to Triple(R.drawable.jupiter_texture, 0.8f, "Юпитер | Радиус: 69 911 км | Расстояние: 778.5 млн км | Самая большая планета"),
+        "Сатурн" to Triple(R.drawable.saturn_texture, 0.65f, "Сатурн | Радиус: 58 232 км | Расстояние: 1.43 млрд км | Планета с кольцами"),
+        "Уран" to Triple(R.drawable.uranus_texture, 0.55f, "Уран | Радиус: 25 362 км | Расстояние: 2.87 млрд км | Вращается на боку"),
+        "Нептун" to Triple(R.drawable.neptune_texture, 0.54f, "Нептун | Радиус: 24 622 км | Расстояние: 4.5 млрд км | Самые сильные ветры")
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { ctx ->
@@ -76,11 +92,19 @@ fun OpenGLScreen() {
                             if (currentPlanetName == "Луна") {
                                 showMoonDialog = true
                             } else {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "Информация о $currentPlanetName",
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
+                                val data = planetData[currentPlanetName]
+                                if (data != null) {
+                                    currentPlanetTexture = data.first
+                                    currentPlanetRadius = data.second
+                                    currentPlanetInfo = data.third
+                                    showPlanetDialog = true
+                                } else {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Информация о $currentPlanetName",
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         }
                     },
@@ -103,6 +127,16 @@ fun OpenGLScreen() {
     if (showMoonDialog) {
         MoonDialog(
             onDismiss = { showMoonDialog = false }
+        )
+    }
+
+    if (showPlanetDialog) {
+        PlanetDialog(
+            planetName = currentPlanetName,
+            textureResId = currentPlanetTexture,
+            radius = currentPlanetRadius,
+            infoText = currentPlanetInfo,
+            onDismiss = { showPlanetDialog = false }
         )
     }
 
