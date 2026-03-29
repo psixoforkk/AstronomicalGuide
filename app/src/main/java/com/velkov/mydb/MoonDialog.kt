@@ -114,7 +114,7 @@ class MoonRenderer : GLSurfaceView.Renderer {
             float ambient = 0.25;
             float k_diffuse = 0.7;
             float k_specular = 0.5;
-            float diffuse = k_diffuse * max(dot(n_normal, lightvector), 0.0);
+            float diffuse = k_diffuse * max(dot(-n_normal, lightvector), 0.0);
             vec3 reflectvector = reflect(-lightvector, n_normal);
             float specular = k_specular * pow(max(dot(lookvector, reflectvector), 0.0), 32.0);
             vec3 moonColor = vec3(0.85, 0.8, 0.75);

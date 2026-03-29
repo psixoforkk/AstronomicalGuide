@@ -40,6 +40,7 @@ fun OpenGLScreen() {
     var currentPlanetTexture by remember { mutableStateOf(R.drawable.earth_texture) }
     var currentPlanetRadius by remember { mutableStateOf(0.37f) }
     var currentPlanetInfo by remember { mutableStateOf("") }
+    var showWaterDialog by remember { mutableStateOf(false) }
 
     val planetData = mapOf(
         "Меркурий" to Triple(R.drawable.mercury_texture, 0.3f, "Меркурий | Радиус: 2 440 км | Расстояние от Солнца: 57.9 млн км | Самая быстрая планета"),
@@ -89,21 +90,23 @@ fun OpenGLScreen() {
                     onClick = {
                         openGLView?.let { view ->
                             currentPlanetName = view.getCurrentPlanetName()
-                            if (currentPlanetName == "Луна") {
-                                showMoonDialog = true
-                            } else {
-                                val data = planetData[currentPlanetName]
-                                if (data != null) {
-                                    currentPlanetTexture = data.first
-                                    currentPlanetRadius = data.second
-                                    currentPlanetInfo = data.third
-                                    showPlanetDialog = true
-                                } else {
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        "Информация о $currentPlanetName",
-                                        android.widget.Toast.LENGTH_SHORT
-                                    ).show()
+                            when (currentPlanetName) {
+                                "Луна" -> showMoonDialog = true
+                                "Нептун" -> showWaterDialog = true
+                                else -> {
+                                    val data = planetData[currentPlanetName]
+                                    if (data != null) {
+                                        currentPlanetTexture = data.first
+                                        currentPlanetRadius = data.second
+                                        currentPlanetInfo = data.third
+                                        showPlanetDialog = true
+                                    } else {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "Информация о $currentPlanetName",
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
                             }
                         }
@@ -127,6 +130,12 @@ fun OpenGLScreen() {
     if (showMoonDialog) {
         MoonDialog(
             onDismiss = { showMoonDialog = false }
+        )
+    }
+
+    if (showWaterDialog) {
+        NeptuneDialog(
+            onDismiss = { showWaterDialog = false }
         )
     }
 
