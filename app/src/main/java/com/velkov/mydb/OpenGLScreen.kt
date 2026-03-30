@@ -194,23 +194,31 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private val modelMatrix = FloatArray(16)
     private val mvpMatrix = FloatArray(16)
 
+    private var fbo: FrameBufferObject? = null
+    private var postProcessShader: PostProcessShader? = null
     private var backgroundSquare: BackgroundSquare? = null
     private var solarSystem: SolarSystem? = null
-    //private var cube: Cube? = null
     private var startTime: Long = 0
     private var selectionCube: Cube? = null
 
     private var selectedPlanetIndex = 0
     private var planetChangeListener: OnPlanetChangeListener? = null
 
+    private var blackHoleX = 0.5f
+    private var blackHoleY = 0.5f
+    private var blackHoleSpeedX = 0.005f
+    private var blackHoleSpeedY = 0.003f
+
+    private var screenWidth = 1f
+    private var screenHeight = 1f
+    private var time = 0f
+
     private val planetNames = listOf(
         "Меркурий", "Венера", "Земля", "Марс",
         "Юпитер", "Сатурн", "Уран", "Нептун", "Луна"
     )
 
-    fun getCurrentPlanetName(): String {
-        return planetNames[selectedPlanetIndex]
-    }
+    fun getCurrentPlanetName(): String = planetNames[selectedPlanetIndex]
 
     fun setOnPlanetChangeListener(listener: OnPlanetChangeListener) {
         planetChangeListener = listener
@@ -241,56 +249,94 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         backgroundSquare = BackgroundSquare(context)
-
-        //cube = Cube()
-
         solarSystem = SolarSystem(context)
         startTime = System.currentTimeMillis()
 
         selectionCube = Cube()
 
+        postProcessShader = PostProcessShader()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES20.glViewport(0, 0, width, height)
 
+        screenWidth = width.toFloat()
+        screenHeight = height.toFloat()
         val ratio = width.toFloat() / height.toFloat()
-        Matrix.perspectiveM(projectionMatrix, 0, 45f, ratio, 1f, 100f)
 
-        Matrix.setLookAtM(viewMatrix, 0,0f, 15f, 25f,0f, 0f, 0f,0f, 1f, 0f)
+        Matrix.perspectiveM(projectionMatrix, 0, 45f, ratio, 1f, 100f)
+        Matrix.setLookAtM(viewMatrix, 0, 0f, 15f, 25f, 0f, 0f, 0f, 0f, 1f, 0f)
+
+        fbo?.cleanup()
+        fbo = FrameBufferObject(width, height)
     }
 
     override fun onDrawFrame(gl: GL10?) {
+        time += 0.016f
+
+        updateBlackHolePosition()
+
+        //Сцена в текстуру
+        fbo?.bind()
+
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
         Matrix.setIdentityM(modelMatrix, 0)
         Matrix.translateM(modelMatrix, 0, 0f, -20f, -20f)
         Matrix.scaleM(modelMatrix, 0, 25f, 25f, 1f)
-
         Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0)
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
-
         backgroundSquare?.draw(mvpMatrix)
-
-        /*Matrix.setIdentityM(modelMatrix, 0)
-        Matrix.scaleM(modelMatrix, 0, 0.5f, 0.5f, 0.5f)
-        Matrix.rotateM(modelMatrix, 0, cubeRotation, 1f, 1f, 0f)
-
-        Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0)
-        Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
-
-        cube?.draw(mvpMatrix)*/
 
         solarSystem?.update()
         solarSystem?.draw(viewMatrix, projectionMatrix)
 
         drawSelectionCube()
 
+        //Пост процессинг
+        fbo?.unbind()
+
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST)
+
+        //Отрисовка с кадра с искажением
+        postProcessShader?.draw(
+            fbo?.getTextureId() ?: 0,
+            time,
+            screenWidth,
+            screenHeight,
+            blackHoleX,
+            blackHoleY
+        )
+
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST)
+
         (gl as? GLSurfaceView)?.requestRender()
     }
 
-    private fun drawSelectionCube() {
+    private fun updateBlackHolePosition() {
+        blackHoleX += blackHoleSpeedX
+        blackHoleY += blackHoleSpeedY
 
+        if (blackHoleX > 0.9f) {
+            blackHoleX = 0.9f
+            blackHoleSpeedX = -blackHoleSpeedX
+        }
+        if (blackHoleX < 0.1f) {
+            blackHoleX = 0.1f
+            blackHoleSpeedX = -blackHoleSpeedX
+        }
+        if (blackHoleY > 0.9f) {
+            blackHoleY = 0.9f
+            blackHoleSpeedY = -blackHoleSpeedY
+        }
+        if (blackHoleY < 0.1f) {
+            blackHoleY = 0.1f
+            blackHoleSpeedY = -blackHoleSpeedY
+        }
+    }
+
+    private fun drawSelectionCube() {
         val planetPos = getPlanetPosition(selectedPlanetIndex)
 
         Matrix.setIdentityM(modelMatrix, 0)
@@ -305,6 +351,7 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
         selectionCube?.draw(mvpMatrix)
     }
+
     companion object {
         fun loadShader(type: Int, shaderCode: String): Int {
             val shader = GLES20.glCreateShader(type)
@@ -313,9 +360,6 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
             return shader
         }
     }
-
-    private fun cos(angle: Float): Float = kotlin.math.cos(angle.toDouble()).toFloat()
-    private fun sin(angle: Float): Float = kotlin.math.sin(angle.toDouble()).toFloat()
 }
 
 

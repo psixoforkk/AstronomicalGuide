@@ -54,7 +54,7 @@ fun NeptuneDialog(
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
             ) {
-                Text("✕ Закрыть")
+                Text(" Закрыть")
             }
 
             Card(
@@ -67,7 +67,7 @@ fun NeptuneDialog(
                 )
             ) {
                 Text(
-                    text = "♆ Нептун | Радиус: 24 622 км | Планета-океан | Поверхность с волнами",
+                    text = "Нептун | Радиус: 24 622 км | Планета-океан | Поверхность с волнами",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
@@ -92,26 +92,22 @@ class NeptuneGLView(context: Context) : GLSurfaceView(context) {
 
 class NeptuneRenderer : GLSurfaceView.Renderer {
 
-    // Параметры сферы
     private val radius = 1.2f
-    private val innerRadius = 1.20f  // почти впритык к внешней (было 1.15)
+    private val innerRadius = 1.20f
     private val stacks = 60
     private val slices = 60
 
-    // Параметры волн
     private val N = 80
     private val K = 0.06f
     private val DT = 0.1f
     private lateinit var points: Array<Array<WaterPoint>>
 
-    // Данные для OpenGL
     private var innerVertexBuffer: FloatBuffer? = null
     private var innerNormalBuffer: FloatBuffer? = null
-    private var innerIndexBuffer: ShortBuffer? = null  // ДОБАВИЛИ индексы
+    private var innerIndexBuffer: ShortBuffer? = null
     private var outerVertexBuffer: FloatBuffer? = null
     private var indexCount = 0
 
-    // Параметры камеры
     private var xCamera = 0f
     private var yCamera = 0.5f
     private var zCamera = 1.2f
@@ -125,14 +121,12 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
     private var mProgram = 0
     private var mProgramPoints = 0
 
-    // Матрицы
     private val modelMatrix = FloatArray(16)
     private val viewMatrix = FloatArray(16)
     private val modelViewMatrix = FloatArray(16)
     private val projectionMatrix = FloatArray(16)
     private val modelViewProjectionMatrix = FloatArray(16)
 
-    // Шейдер для сплошной сферы
     private val vertexShaderCode = """
         uniform mat4 u_MVPMatrix;
         attribute vec3 a_vertex;
@@ -173,7 +167,6 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
         }
     """.trimIndent()
 
-    // Шейдер для точек
     private val vertexShaderPointsCode = """
         uniform mat4 u_MVPMatrix;
         attribute vec3 a_vertex;
@@ -270,7 +263,6 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
         val innerIndices = mutableListOf<Short>()
         val outerVertices = mutableListOf<Float>()
 
-        // Генерация вершин
         for (i in 0..stacks) {
             val phi = PI * i / stacks
             val sinPhi = sin(phi).toFloat()
@@ -287,7 +279,6 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
 
                 val waveHeight = getWaveHeight(xBase * radius, zBase * radius)
 
-                // ВНУТРЕННЯЯ сфера (почти впритык к внешней)
                 val ix = xBase * innerRadius
                 val iy = yBase * innerRadius
                 val iz = zBase * innerRadius
@@ -300,7 +291,6 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
                 innerNormals.add(yBase)
                 innerNormals.add(zBase)
 
-                // ВНЕШНЯЯ сфера (точки с волнами)
                 val ox = xBase * radius
                 val oy = yBase * radius + waveHeight
                 val oz = zBase * radius
@@ -311,7 +301,6 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
             }
         }
 
-        // Генерация индексов для треугольников
         for (i in 0 until stacks) {
             for (j in 0 until slices) {
                 val first = (i * (slices + 1) + j).toShort()
@@ -430,7 +419,6 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
         generateSpheres()
         calcMatrix()
 
-        // 1. Рисуем внутреннюю сплошную сферу (ТРЕУГОЛЬНИКИ ПО ИНДЕКСАМ)
         GLES20.glUseProgram(mProgram)
 
         val uCameraHandle = GLES20.glGetUniformLocation(mProgram, "u_camera")
@@ -450,13 +438,11 @@ class NeptuneRenderer : GLSurfaceView.Renderer {
         GLES20.glEnableVertexAttribArray(aNormalHandle)
         GLES20.glVertexAttribPointer(aNormalHandle, 3, GLES20.GL_FLOAT, false, 0, innerNormalBuffer)
 
-        // Рисуем через индексы!
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, indexCount, GLES20.GL_UNSIGNED_SHORT, innerIndexBuffer)
 
         GLES20.glDisableVertexAttribArray(aVertexHandle)
         GLES20.glDisableVertexAttribArray(aNormalHandle)
 
-        // 2. Рисуем внешнюю сферу из точек
         GLES20.glUseProgram(mProgramPoints)
 
         val uMvpPointsHandle = GLES20.glGetUniformLocation(mProgramPoints, "u_MVPMatrix")
